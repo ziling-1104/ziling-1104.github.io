@@ -1,0 +1,75 @@
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+header {
+  background: #5734d5;
+  padding: 1rem;
+  position: fixed;
+  width: 100%;
+  top: 0;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+nav a {
+  color: #a2e7eb;
+  text-decoration: none;
+}
+
+main {
+  margin-top: 60px;
+}
+
+section {
+  padding: 4rem 2rem;
+}
+
+#about {
+  background: #7ce2e4;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.profile-pic {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #5734d5;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.project-card {
+  background: #927ff0;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgb(206, 145, 13,0.1);
+}
+
+h1, h2 {
+  margin-bottom: 1rem;
+}
