@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -12,15 +11,16 @@
     <nav>
       <a href="#about">關於我</a>
       <a href="#projects">作品集</a>
+      <a href="#moodmate">MoodMate+</a>
       <a href="#contact">聯絡方式</a>
-      <a href="MODLES.html">teachable machine</a>
     </nav>
   </header>
 
   <main>
+    <!-- 關於我 -->
     <section id="about">
       <div class="profile">
-        <img src="N226681992.jpeg" alt="個人照片" class="profile-pic">
+        <img src="attached_assets/N226681992.jpeg" alt="個人照片" class="profile-pic">
         <h1>陳子陵</h1>
       </div>
       <p>雖然主修企管，但對行銷充滿熱情，特別喜歡品牌行銷與市場策略。擅長觀察市場趨勢、分析消費者行為，並運用創意提升品牌影響力。</p>
@@ -28,6 +28,7 @@
       <p>對數位行銷、社群經營與內容行銷特別感興趣，希望透過實習累積經驗，學習如何運用行銷策略創造價值。期待持續學習與成長，將創新思維與策略應用於市場，為品牌帶來實際影響力。</p>
     </section>
 
+    <!-- 專業技能 -->
     <section id="projects">
       <h2>專業技能</h2>
       <div class="project-grid">
@@ -42,11 +43,36 @@
       </div>
     </section>
 
+    <!-- MoodMate+ 區塊 -->
+    <section id="moodmate" class="moodmate">
+      <h2>MoodMate+ 戀愛對話模式</h2>
+
+      <div id="webcam-container"></div>
+
+      <div id="result">
+        <div id="emoji">🙂</div>
+        <div id="suggestion">請點擊下方按鈕開始偵測</div>
+      </div>
+
+      <div>
+        <button onclick="init()">✨ 啟動戀愛助理</button>
+        <button id="speech-toggle" onclick="toggleSpeech()">🔊 語音開啟</button>
+      </div>
+
+      <div id="history"></div>
+    </section>
+
+    <!-- 聯絡方式 -->
     <section id="contact">
       <h2>聯絡方式</h2>
       <p>Email: a0903959590@gmail.com</p>
       <p>電話: 0967211041</p>
     </section>
   </main>
+
+  <!-- 引入模型與腳本 -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
