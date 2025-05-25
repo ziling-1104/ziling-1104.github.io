@@ -5,6 +5,8 @@ const updateInterval = 4000;
 let currentAudio = null;
 let latestFaceLandmarks = null;
 
+const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
+
 const audioMap = {
   happy: [new Audio("happy_1.mp3"), new Audio("happy_2.mp3"), new Audio("happy_3.mp3")],
   angry: [new Audio("angry_1.mp3"), new Audio("angry_2.mp3"), new Audio("angry_3.mp3")],
@@ -82,9 +84,20 @@ function detectEmotion() {
   const mouthSlope = ((mouthLeft.y + mouthRight.y) / 2 - mouthTop);
 
   let className = "neutral";
-  if (mouthSlope < 0.005 && browLift > 0.015) className = "happy";
-  else if (browLift < -0.005 && eyeOpen < 0.012) className = "angry";
-  else if (eyeOpen < 0.005 && mouthOpen > 0.05) className = "tired";
+
+  if (mouthSlope < 0.015 && browLift > 0.005 && eyeOpen > 0.008) {
+    className = "happy";
+  } else if (browLift < -0.001 && eyeOpen < 0.009 && mouthOpen < 0.03) {
+    className = "angry";
+  } else if (eyeOpen < 0.005 && mouthOpen > 0.025) {
+    className = "tired";
+  } else if (
+    mouthSlope >= 0.003 && mouthSlope <= 0.02 &&
+    browLift >= -0.005 && browLift <= 0.01 &&
+    eyeOpen >= 0.006 && eyeOpen <= 0.02
+  ) {
+    className = "neutral";
+  }
 
   displayEmotion(className);
 }
@@ -117,6 +130,13 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
+  // emoji 雨動畫
+  triggerEmojiRain(resultEmoji);
+
+  // 更新統計圖表
+  emotionLog[className]++;
+  updateChart();
+
   if (isSpeakingEnabled && resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) currentAudio.pause();
     const audios = audioMap[className];
@@ -124,8 +144,6 @@ function displayEmotion(className) {
       currentAudio = audios[Math.floor(Math.random() * audios.length)];
       currentAudio.currentTime = 0;
       currentAudio.play();
-
-      // emoji 彈跳動畫
       emoji.classList.add("talking");
       setTimeout(() => emoji.classList.remove("talking"), 1000);
     }
@@ -137,6 +155,27 @@ function displayEmotion(className) {
   record.textContent = `[${timestamp}] ${resultEmoji} ${resultText}`;
   record.style.color = getColorByClass(className);
   history.prepend(record);
+}
+
+function triggerEmojiRain(emoji) {
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement("div");
+    el.className = "emoji-float";
+    el.innerText = emoji;
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.animationDelay = i * 0.2 + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+function updateChart() {
+  const bars = document.querySelectorAll(".bar");
+  bars.forEach(bar => {
+    const emotion = bar.dataset.emotion;
+    bar.style.width = emotionLog[emotion] * 10 + "px";
+    bar.innerText = `${emotion}：${emotionLog[emotion]}`;
+  });
 }
 
 function startFaceMesh() {
