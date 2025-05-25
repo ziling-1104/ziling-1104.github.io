@@ -26,38 +26,21 @@ const suggestionPool = {
   ],
   neutral: [
     "她現在沒特別情緒。你可以說：『這週末你有想去哪裡嗎？』",
-    "中性狀態～你可以說：『如果只能選一種飲料，你會喝？』",
+    "平靜狀態～你可以說：『如果只能選一種飲料，你會喝？』",
     "平靜模式～用趣味破冰：『昨天夢到我們去環島欸！你夢到什麼？』"
   ]
 };
 
 const audioMap = {
-  happy: [
-    new Audio("happy_1.mp3"),
-    new Audio("happy_2.mp3"),
-    new Audio("happy_3.mp3")
-  ],
-  angry: [
-    new Audio("angry_1.mp3"),
-    new Audio("angry_2.mp3"),
-    new Audio("angry_3.mp3")
-  ],
-  tired: [
-    new Audio("tired_1.mp3"),
-    new Audio("tired_2.mp3"),
-    new Audio("tired_3.mp3")
-  ],
-  neutral: [
-    new Audio("neutral_1.mp3"),
-    new Audio("neutral_2.mp3"),
-    new Audio("neutral_3.mp3")
-  ]
+  happy: [new Audio("happy_1.mp3"), new Audio("happy_2.mp3"), new Audio("happy_3.mp3")],
+  angry: [new Audio("angry_1.mp3"), new Audio("angry_2.mp3"), new Audio("angry_3.mp3")],
+  tired: [new Audio("tired_1.mp3"), new Audio("tired_2.mp3"), new Audio("tired_3.mp3")],
+  neutral: [new Audio("neutral_1.mp3"), new Audio("neutral_2.mp3"), new Audio("neutral_3.mp3")]
 };
 
 async function init() {
   const faceMesh = new FaceMesh({
-    locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
   });
 
   faceMesh.setOptions({
@@ -95,13 +78,19 @@ function detectEmotion() {
 
   let className = "neutral";
 
-  // 靈敏版判斷邏輯
-  if (mouthOpen > 0.025) {
+  // 新邏輯：優先 happy > tired > angry > neutral
+  if (browLift > 0.008 && eyeOpen > 0.006) {
+    className = "happy";
+  } else if (mouthOpen > 0.025) {
     className = "tired";
   } else if (mouthOpen < 0.012 && browLift < 0.010) {
     className = "angry";
-  } else if (browLift > 0.012 && eyeOpen > 0.008) {
-    className = "happy";
+  } else if (
+    Math.abs(mouthOpen) < 0.015 &&
+    Math.abs(browLift) < 0.008 &&
+    Math.abs(eyeOpen) < 0.006
+  ) {
+    className = "neutral";
   }
 
   const now = Date.now();
@@ -114,10 +103,7 @@ function detectEmotion() {
 }
 
 function averageY(indices) {
-  return (
-    indices.map((i) => latestFaceLandmarks[i].y).reduce((a, b) => a + b, 0) /
-    indices.length
-  );
+  return indices.map(i => latestFaceLandmarks[i].y).reduce((a, b) => a + b, 0) / indices.length;
 }
 
 function displayEmotion(className) {
@@ -147,7 +133,6 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
-  // 播放 mp3（避免重複播放）
   if (resultText !== lastSpokenText) {
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
@@ -157,14 +142,12 @@ function displayEmotion(className) {
     lastSpokenText = resultText;
   }
 
-  // 加入歷史紀錄
   const timestamp = new Date().toLocaleTimeString();
   const record = document.createElement("div");
   record.textContent = `[${timestamp}] ${resultEmoji} ${resultText}`;
   record.style.color = getColorByClass(className);
   history.prepend(record);
 
-  // 更新統計圖表
   emotionLog[className]++;
   updateChart();
 }
@@ -186,8 +169,4 @@ function updateChart() {
     bar.style.width = emotionLog[emotion] * 10 + "px";
     bar.innerText = `${emotion}：${emotionLog[emotion]}`;
   });
-}
-
-function toggleSpeech() {
-  // 若你未使用開關語音功能，可略過這段
 }
