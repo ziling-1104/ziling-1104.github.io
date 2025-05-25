@@ -1,19 +1,18 @@
-/* ===== 全站基本設定 ===== */
+/* 基本設定 */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-
 body {
   font-family: Arial, sans-serif;
   line-height: 1.6;
   background: #ffffff;
   color: #222;
-  transition: background-color 0.5s ease;
+  transition: background-color 0.6s ease;
 }
 
-/* ===== 導覽列樣式 ===== */
+/* 導覽列 */
 header {
   background: #5734d5;
   padding: 1rem;
@@ -22,34 +21,25 @@ header {
   top: 0;
   z-index: 10;
 }
-
 nav {
   display: flex;
   justify-content: center;
   gap: 2rem;
 }
-
 nav a {
   color: #a2e7eb;
   text-decoration: none;
   font-weight: bold;
 }
-
 main {
   margin-top: 70px;
 }
 
-/* ===== 區塊通用設定 ===== */
-section {
-  padding: 4rem 2rem;
-}
-
-/* ===== 關於我區塊 ===== */
+/* 關於我 */
 #about {
   background: #7ce2e4;
   text-align: center;
 }
-
 .profile {
   display: flex;
   align-items: center;
@@ -58,7 +48,6 @@ section {
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
-
 .profile-pic {
   width: 200px;
   height: 200px;
@@ -67,18 +56,16 @@ section {
   border: 4px solid #5734d5;
 }
 
-/* ===== 作品集區塊 ===== */
+/* 作品集 */
 #projects {
   background: #ffffff;
 }
-
 .project-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
   padding: 2rem 0;
 }
-
 .project-card {
   background: #927ff0;
   color: white;
@@ -87,13 +74,12 @@ section {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== MoodMate+ 區塊 ===== */
+/* MoodMate 區塊 */
 #moodmate {
-  background: #fff0f5;
+  background: transparent;
   text-align: center;
   padding: 4rem 2rem;
 }
-
 #result {
   margin-top: 1.5rem;
   background: #fff;
@@ -102,18 +88,15 @@ section {
   display: inline-block;
   box-shadow: 0 0 10px rgba(255, 105, 135, 0.2);
 }
-
 #emoji {
   font-size: 3em;
   margin-bottom: 0.5rem;
 }
-
 #suggestion {
   font-size: 1.1em;
   color: #5734d5;
   margin-top: 1rem;
 }
-
 button {
   margin: 0.5rem;
   padding: 0.6rem 1.2rem;
@@ -125,25 +108,20 @@ button {
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
 button:hover {
   background-color: #ff8da1;
 }
-
 #speech-toggle {
   background-color: #87ceeb;
 }
-
 #speech-toggle:hover {
   background-color: #5eb4d4;
 }
-
 #webcam-container {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
 }
-
 #history {
   margin-top: 2rem;
   max-width: 400px;
@@ -154,14 +132,13 @@ button:hover {
   color: #444;
   line-height: 1.4;
 }
-
 #history div {
   margin-bottom: 0.5rem;
   border-bottom: 1px dashed #ccc;
   padding-bottom: 0.3rem;
 }
 
-/* ===== 統計圖表條狀圖 ===== */
+/* 統計條 */
 #chart {
   margin-top: 2rem;
   max-width: 400px;
@@ -169,7 +146,6 @@ button:hover {
   margin-right: auto;
   text-align: left;
 }
-
 .bar {
   height: 24px;
   margin: 8px 0;
@@ -183,7 +159,7 @@ button:hover {
   overflow: hidden;
 }
 
-/* ===== emoji 雨動畫 ===== */
+/* emoji 雨動畫 */
 .emoji-float {
   position: fixed;
   top: -2em;
@@ -191,7 +167,6 @@ button:hover {
   animation: floatDown 4s linear forwards;
   z-index: 999;
 }
-
 @keyframes floatDown {
   to {
     top: 100vh;
@@ -199,39 +174,35 @@ button:hover {
   }
 }
 
-/* ===== emoji 說話彈跳動畫 ===== */
+/* emoji 說話彈跳 */
 @keyframes bounce {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25) rotate(5deg); }
 }
-
 .talking {
   animation: bounce 0.6s ease-in-out;
 }
 
-/* ===== 聯絡方式區塊 ===== */
+/* 聯絡方式 */
 #contact {
   background: #f5f5f5;
   text-align: center;
 }
 
-/* ===== 響應式手機版樣式 ===== */
+/* 手機響應式 */
 @media (max-width: 768px) {
   .profile {
     flex-direction: column;
     text-align: center;
   }
-
   .profile-pic {
     width: 150px;
     height: 150px;
   }
-
   nav {
     flex-direction: column;
     gap: 1rem;
   }
-
   #result {
     width: 90%;
   }
