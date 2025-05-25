@@ -15,26 +15,10 @@ const audioMap = {
 };
 
 const suggestionPool = {
-  happy: [
-    "她心情不錯！你可以說：『看到你我也整天都快樂！』",
-    "氣氛超棒，可以說：『笑得像仙女一樣欸～』",
-    "開心的時候最可愛，你可以說：『我是不是該錄起來，每天看一次』"
-  ],
-  angry: [
-    "小心，她可能有點不開心。你可以說：『我剛才是不是太急了？對不起嘛～抱一下？』",
-    "她似乎有點氣氣的。試試：『要不要我請你喝奶茶？不氣不氣～』",
-    "火氣上來了？來點柔軟的：『你是我最重要的人，我想跟你好好講講』"
-  ],
-  tired: [
-    "她好像很累。你可以說：『辛苦啦～今天不要再想工作了！』",
-    "她有點疲倦。輕輕一句：『來，我幫你按摩三分鐘～』",
-    "看起來需要放鬆一下：『我們來看部溫馨的劇好不好？』"
-  ],
-  neutral: [
-    "她現在沒特別情緒。你可以說：『這週末你有想去哪裡嗎？』",
-    "中性狀態～你可以說：『如果只能選一種飲料，你會喝？』",
-    "平靜模式～用趣味破冰：『昨天夢到我們去環島欸！你夢到什麼？』"
-  ]
+  happy: ["她心情不錯！你可以說：『看到你我也整天都快樂！』", "氣氛超棒，可以說：『笑得像仙女一樣欸～』", "開心的時候最可愛，你可以說：『我是不是該錄起來，每天看一次』"],
+  angry: ["小心，她可能有點不開心。你可以說：『我剛才是不是太急了？對不起嘛～抱一下？』", "她似乎有點氣氣的。試試：『要不要我請你喝奶茶？不氣不氣～』", "火氣上來了？來點柔軟的：『你是我最重要的人，我想跟你好好講講』"],
+  tired: ["她好像很累。你可以說：『辛苦啦～今天不要再想工作了！』", "她有點疲倦。輕輕一句：『來，我幫你按摩三分鐘～』", "看起來需要放鬆一下：『我們來看部溫馨的劇好不好？』"],
+  neutral: ["她現在沒特別情緒。你可以說：『這週末你有想去哪裡嗎？』", "中性狀態～你可以說：『如果只能選一種飲料，你會喝？』", "平靜模式～用趣味破冰：『昨天夢到我們去環島欸！你夢到什麼？』"]
 };
 
 async function init() {
@@ -43,9 +27,7 @@ async function init() {
   const video = document.createElement("video");
   document.getElementById("webcam-container").appendChild(video);
   const camera = new Camera(video, {
-    onFrame: async () => {
-      await faceMesh.send({ image: video });
-    },
+    onFrame: async () => { await faceMesh.send({ image: video }); },
     width: 400,
     height: 400
   });
@@ -84,28 +66,36 @@ function detectEmotion() {
   const mouthSlope = ((mouthLeft.y + mouthRight.y) / 2 - mouthTop);
 
   const irisTop = latestFaceLandmarks[468].y;
+  const browInner = latestFaceLandmarks[66];
+  const browOuter = latestFaceLandmarks[105];
 
   let className = "neutral";
 
-  // happy
   if (mouthSlope < 0.015 && browLift > 0.005 && eyeOpen > 0.008) {
     className = "happy";
-  }
-
-  // angry（強化 + 翻白眼）
+  } 
   else if (
-    (browLift < 0.002 && eyeOpen < 0.012 && mouthOpen < 0.04) ||
-    (irisTop < leftEyeTop - 0.004 && eyeOpen > 0.012)
+    (
+      browLift < 0.001 &&
+      eyeOpen < 0.012 &&
+      mouthOpen < 0.045 &&
+      Math.abs(browInner.x - browOuter.x) < 0.035
+    ) ||
+    (
+      irisTop < leftEyeTop - 0.004 &&
+      eyeOpen > 0.012
+    ) ||
+    (
+      mouthOpen < 0.02 &&
+      eyeOpen < 0.012 &&
+      mouthSlope >= -0.005 && mouthSlope <= 0.005
+    )
   ) {
     className = "angry";
-  }
-
-  // tired
+  } 
   else if (eyeOpen < 0.005 && mouthOpen > 0.025) {
     className = "tired";
-  }
-
-  // neutral
+  } 
   else if (
     mouthSlope >= 0.003 && mouthSlope <= 0.02 &&
     browLift >= -0.005 && browLift <= 0.01 &&
@@ -127,10 +117,7 @@ function displayEmotion(className) {
   };
 
   const bgColorMap = {
-    happy: "#fff0f5",
-    angry: "#ffeaea",
-    tired: "#e8f0ff",
-    neutral: "#f4f4f4"
+    happy: "#fff0f5", angry: "#ffeaea", tired: "#e8f0ff", neutral: "#f4f4f4"
   };
 
   const emoji = document.getElementById("emoji");
@@ -146,7 +133,6 @@ function displayEmotion(className) {
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
   triggerEmojiRain(resultEmoji);
-
   emotionLog[className]++;
   updateChart();
 
