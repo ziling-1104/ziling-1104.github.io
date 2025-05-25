@@ -83,15 +83,30 @@ function detectEmotion() {
   const mouthRight = latestFaceLandmarks[291];
   const mouthSlope = ((mouthLeft.y + mouthRight.y) / 2 - mouthTop);
 
+  const irisTop = latestFaceLandmarks[468].y;
+
   let className = "neutral";
 
+  // happy
   if (mouthSlope < 0.015 && browLift > 0.005 && eyeOpen > 0.008) {
     className = "happy";
-  } else if (browLift < -0.001 && eyeOpen < 0.009 && mouthOpen < 0.03) {
+  }
+
+  // angry（強化 + 翻白眼）
+  else if (
+    (browLift < 0.002 && eyeOpen < 0.012 && mouthOpen < 0.04) ||
+    (irisTop < leftEyeTop - 0.004 && eyeOpen > 0.012)
+  ) {
     className = "angry";
-  } else if (eyeOpen < 0.005 && mouthOpen > 0.025) {
+  }
+
+  // tired
+  else if (eyeOpen < 0.005 && mouthOpen > 0.025) {
     className = "tired";
-  } else if (
+  }
+
+  // neutral
+  else if (
     mouthSlope >= 0.003 && mouthSlope <= 0.02 &&
     browLift >= -0.005 && browLift <= 0.01 &&
     eyeOpen >= 0.006 && eyeOpen <= 0.02
@@ -130,10 +145,8 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
-  // emoji 雨動畫
   triggerEmojiRain(resultEmoji);
 
-  // 更新統計圖表
   emotionLog[className]++;
   updateChart();
 
@@ -180,8 +193,7 @@ function updateChart() {
 
 function startFaceMesh() {
   const faceMesh = new FaceMesh({
-    locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
   });
   faceMesh.setOptions({
     maxNumFaces: 1,
