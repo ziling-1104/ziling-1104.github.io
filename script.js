@@ -1,8 +1,9 @@
-const URL = "https://teachablemachine.withgoogle.com/models/YOUR_MODEL_URL/"; // ← 替換成你自己的模型網址
+const URL = "https://teachablemachine.withgoogle.com/models/YOUR_MODEL_URL/"; // ← 改成你的 TM 模型網址
 let model, webcam, maxPredictions;
+let videoElement;
 let useLowLoad = false;
 let speechEnabled = false;
-let camera;
+let detecting = false;
 let lastEmotion = "";
 const counts = { happy: 0, angry: 0, tired: 0, neutral: 0 };
 
@@ -11,44 +12,45 @@ async function init() {
   const metadataURL = URL + "metadata.json";
   model = await tmImage.load(modelURL, metadataURL);
 
-  const flip = true;
-  webcam = new tmImage.Webcam(400, 400, flip);
+  webcam = new tmImage.Webcam(400, 400, true); // width, height, flip
   await webcam.setup();
   await webcam.play();
   document.getElementById("webcam-container").appendChild(webcam.canvas);
 
-  window.requestAnimationFrame(loop);
+  videoElement = webcam.webcam; // 這是 <video> 元素
   setupMediaPipe();
+
+  window.requestAnimationFrame(loop);
 }
 
 function toggleSpeech() {
   speechEnabled = !speechEnabled;
-  const btn = document.getElementById("speech-toggle");
-  btn.textContent = speechEnabled ? "🔇 語音關閉" : "🔊 語音開啟";
+  document.getElementById("speech-toggle").textContent = speechEnabled ? "🔇 語音關閉" : "🔊 語音開啟";
 }
 
 function toggleLowLoad() {
   useLowLoad = !useLowLoad;
-  const btn = document.getElementById("load-toggle");
-  btn.textContent = useLowLoad ? "⚙️ 節能模式" : "⚙️ 全功能模式";
+  document.getElementById("load-toggle").textContent = useLowLoad ? "⚙️ 節能模式" : "⚙️ 全功能模式";
 }
 
 async function loop() {
   webcam.update();
-  await predict();
+  if (!detecting) {
+    detecting = true;
+    await detectAngry();
+    detecting = false;
+  }
   window.requestAnimationFrame(loop);
 }
 
-async function predict() {
+async function detectAngry() {
   const prediction = await model.predict(webcam.canvas);
   const angry = prediction.find(p => p.className === "angry");
-  if (angry && angry.probability > 0.8) {
+  if (angry && angry.probability > 0.85) {
     showResult("angry", "😠", "深呼吸一下，冷靜一下心情吧！");
-    return;
   }
 }
 
-// 顯示結果與語音等
 function showResult(emotion, emoji, suggestion) {
   if (emotion !== lastEmotion) {
     lastEmotion = emotion;
@@ -84,25 +86,26 @@ function speakSuggestion(text) {
   speechSynthesis.speak(utter);
 }
 
-// ─────── MediaPipe ───────
 function setupMediaPipe() {
   const faceMesh = new FaceMesh({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
   });
+
   faceMesh.setOptions({
     maxNumFaces: 1,
     refineLandmarks: true,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5,
   });
+
   faceMesh.onResults(onResults);
 
-  camera = new Camera(webcam.webcam, {
+  const camera = new Camera(videoElement, {
     onFrame: async () => {
-      await faceMesh.send({ image: webcam.webcam });
+      await faceMesh.send({ image: videoElement });
     },
     width: 400,
-    height: 400,
+    height: 400
   });
   camera.start();
 }
@@ -118,6 +121,8 @@ function onResults(results) {
 
   const eyeOpenness = Math.abs(leftEye.y - rightEye.y);
   const mouthOpen = Math.abs(topLip.y - bottomLip.y);
+
+  if (lastEmotion === "angry") return; // 若是生氣，暫不讓 MediaPipe 蓋掉
 
   if (mouthOpen > 0.05) {
     showResult("happy", "😄", "你看起來很開心！");
