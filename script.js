@@ -71,31 +71,23 @@ function detectEmotion() {
 
   let className = "neutral";
 
+  // happy
   if (mouthSlope < 0.015 && browLift > 0.005 && eyeOpen > 0.008) {
     className = "happy";
   } 
+  // angry（靈敏加強）
   else if (
-    (
-      browLift < 0.001 &&
-      eyeOpen < 0.012 &&
-      mouthOpen < 0.045 &&
-      Math.abs(browInner.x - browOuter.x) < 0.035
-    ) ||
-    (
-      irisTop < leftEyeTop - 0.004 &&
-      eyeOpen > 0.012
-    ) ||
-    (
-      mouthOpen < 0.02 &&
-      eyeOpen < 0.012 &&
-      mouthSlope >= -0.005 && mouthSlope <= 0.005
-    )
+    (browLift < 0.003 && eyeOpen < 0.018 && mouthOpen < 0.06) ||
+    (irisTop < leftEyeTop - 0.003 && eyeOpen > 0.01) ||
+    (mouthSlope >= -0.008 && mouthSlope <= 0.008)
   ) {
     className = "angry";
   } 
+  // tired
   else if (eyeOpen < 0.005 && mouthOpen > 0.025) {
     className = "tired";
   } 
+  // neutral
   else if (
     mouthSlope >= 0.003 && mouthSlope <= 0.02 &&
     browLift >= -0.005 && browLift <= 0.01 &&
