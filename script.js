@@ -1,5 +1,11 @@
+const modelURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/model.json";
+const metadataURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/metadata.json";
+
+let model, webcam, maxPredictions;
 let isSpeakingEnabled = true;
 let lastSpokenText = "";
+let lastUpdateTime = 0;
+const updateInterval = 4000;
 let currentAudio = null;
 let latestFaceLandmarks = null;
 
@@ -12,111 +18,108 @@ const audioMap = {
 
 const suggestionPool = {
   happy: [
-    "你笑起來真迷人！",
-    "心情很好呢～",
-    "笑得像仙女一樣欸～"
+    "她心情不錯！你可以說：『看到你我也整天都快樂！』",
+    "氣氛超棒，可以說：『笑得像仙女一樣欸～』",
+    "開心的時候最可愛，你可以說：『我是不是該錄起來，每天看一次』"
   ],
   angry: [
-    "感覺妳有點不開心，還好嗎？",
-    "要不要我請你喝奶茶？不氣不氣～",
-    "火氣上來了？我來抱抱你"
+    "小心，她可能有點不開心。你可以說：『我剛才是不是太急了？對不起嘛～抱一下？』",
+    "她似乎有點氣氣的。試試：『要不要我請你喝奶茶？不氣不氣～』",
+    "火氣上來了？來點柔軟的：『你是我最重要的人，我想跟你好好講講』"
   ],
   tired: [
-    "你是不是很累？休息一下吧～",
-    "今天好辛苦，來點小確幸？",
-    "想不想看個劇放鬆一下？"
+    "她好像很累。你可以說：『辛苦啦～今天不要再想工作了！』",
+    "她有點疲倦。輕輕一句：『來，我幫你按摩三分鐘～』",
+    "看起來需要放鬆一下：『我們來看部溫馨的劇好不好？』"
   ],
   neutral: [
-    "平靜也是一種幸福。",
-    "這時候可以來點小話題～",
-    "要不要聽個輕鬆的歌？"
+    "她現在沒特別情緒。你可以說：『這週末你有想去哪裡嗎？』",
+    "中性狀態～你可以說：『如果只能選一種飲料，你會喝？』",
+    "平靜模式～用趣味破冰：『昨天夢到我們去環島欸！你夢到什麼？』"
   ]
 };
 
-function init() {
-  const videoElement = document.createElement("video");
-  videoElement.setAttribute("playsinline", true);
-  videoElement.style.display = "none";
-  document.body.appendChild(videoElement);
+async function init() {
+  const suggestion = document.getElementById("suggestion");
+  suggestion.innerHTML = "正在載入模型...";
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
 
-  const webcamContainer = document.getElementById("webcam-container");
-  const canvasElement = document.createElement("canvas");
-  canvasElement.width = 400;
-  canvasElement.height = 400;
-  webcamContainer.appendChild(canvasElement);
-  const canvasCtx = canvasElement.getContext("2d");
+  suggestion.innerHTML = "正在啟動攝影機...";
+  const flip = true;
+  webcam = new tmImage.Webcam(400, 400, flip);
+  await webcam.setup();
+  await webcam.play();
+  document.getElementById("webcam-container").appendChild(webcam.canvas);
+  suggestion.innerHTML = "偵測中...";
 
-  const faceMesh = new FaceMesh({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-  });
-  faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
-  });
-
-  faceMesh.onResults((results) => {
-    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-      latestFaceLandmarks = results.multiFaceLandmarks[0];
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.restore();
-      processEmotion();
-    }
-  });
-
-  const camera = new Camera(videoElement, {
-    onFrame: async () => {
-      await faceMesh.send({ image: videoElement });
-    },
-    width: 400,
-    height: 400
-  });
-  camera.start();
+  startFaceMesh(); // 啟動嘴角追蹤
+  window.requestAnimationFrame(loop);
 }
 
-// 根據嘴角與嘴巴位置偵測情緒
-function processEmotion() {
-  if (!latestFaceLandmarks) return;
+async function loop() {
+  webcam.update();
+  const now = Date.now();
+  if (now - lastUpdateTime > updateInterval) {
+    await predict();
+    lastUpdateTime = now;
+  }
+  setTimeout(() => {
+    window.requestAnimationFrame(loop);
+  }, 200); // 穩定節奏
+}
 
-  const leftMouth = latestFaceLandmarks[61];
-  const rightMouth = latestFaceLandmarks[291];
+async function predict() {
+  const prediction = await model.predict(webcam.canvas);
+  const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
+  let className = best.className;
+
+  className = getCorrectedClass(className); // 嘴角補強判斷
+  displayEmotion(className);
+}
+
+function getCorrectedClass(tmClass) {
+  if (!latestFaceLandmarks) return tmClass;
+
+  const left = latestFaceLandmarks[61];
+  const right = latestFaceLandmarks[291];
   const topLip = latestFaceLandmarks[13];
   const bottomLip = latestFaceLandmarks[14];
-  const midMouth = latestFaceLandmarks[0];
 
-  const avgMouthCornerY = (leftMouth.y + rightMouth.y) / 2;
-  const mouthCenterY = (topLip.y + bottomLip.y) / 2;
-  const mouthOpen = bottomLip.y - topLip.y;
+  const mouthHeight = bottomLip.y - topLip.y;
+  const mouthSlope = ((left.y + right.y) / 2 - topLip.y);
 
-  let emotion = "neutral";
-  if (mouthOpen > 0.06) {
-    emotion = "tired";
-  } else if (avgMouthCornerY < mouthCenterY - 0.02) {
-    emotion = "happy";
-  } else if (avgMouthCornerY > mouthCenterY + 0.02) {
-    emotion = "angry";
-  }
+  // happy：嘴角上揚
+  if (tmClass !== "happy" && mouthSlope < 0.02) return "happy";
+  // angry：嘴角下壓
+  if (tmClass !== "angry" && mouthSlope > 0.05) return "angry";
+  // tired：嘴巴大張
+  if (tmClass !== "tired" && mouthHeight > 0.07) return "tired";
+  // neutral：嘴角平且嘴巴沒打開
+  if (
+    mouthSlope >= 0.02 && mouthSlope <= 0.05 &&
+    mouthHeight <= 0.05 &&
+    tmClass !== "neutral"
+  ) return "neutral";
 
-  displayEmotion(emotion);
+  return tmClass;
 }
 
 function displayEmotion(className) {
   const emojiMap = {
-    happy: "😊",
-    angry: "😠",
-    tired: "😴",
-    neutral: "😐"
+    happy: "😊", angry: "😠", tired: "😴", neutral: "😐"
   };
 
+  const emoji = document.getElementById("emoji");
+  const suggestion = document.getElementById("suggestion");
+  const history = document.getElementById("history");
+
   const resultEmoji = emojiMap[className] || "❓";
-  const pool = suggestionPool[className] || ["..."];
+  const pool = suggestionPool[className] || ["再觀察一下唷～"];
   const resultText = pool[Math.floor(Math.random() * pool.length)];
 
-  document.getElementById("emoji").innerHTML = resultEmoji;
-  document.getElementById("suggestion").innerHTML = resultText;
+  emoji.innerHTML = resultEmoji;
+  suggestion.innerHTML = resultText;
 
   if (isSpeakingEnabled && resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) currentAudio.pause();
@@ -129,12 +132,39 @@ function displayEmotion(className) {
     lastSpokenText = resultText;
   }
 
-  const history = document.getElementById("history");
   const timestamp = new Date().toLocaleTimeString();
   const record = document.createElement("div");
   record.textContent = `[${timestamp}] ${resultEmoji} ${resultText}`;
   record.style.color = getColorByClass(className);
   history.prepend(record);
+}
+
+function startFaceMesh() {
+  const faceMesh = new FaceMesh({
+    locateFile: (file) =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+  });
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+
+  faceMesh.onResults((results) => {
+    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+      latestFaceLandmarks = results.multiFaceLandmarks[0];
+    }
+  });
+
+  const camera = new Camera(webcam.webcam, {
+    onFrame: async () => {
+      await faceMesh.send({ image: webcam.webcam });
+    },
+    width: 400,
+    height: 400
+  });
+  camera.start();
 }
 
 function toggleSpeech() {
