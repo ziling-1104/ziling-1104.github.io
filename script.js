@@ -63,7 +63,7 @@ async function loadTeachableModel() {
   webcam = new tmImage.Webcam(200, 200, true);
   await webcam.setup();
   await webcam.play();
-  document.getElementById("webcam-container").appendChild(webcam.canvas);
+  // 只插入一次 webcam 畫面，避免重複
 }
 
 function startFaceMesh() {
@@ -81,7 +81,7 @@ function startFaceMesh() {
       latestFaceLandmarks = results.multiFaceLandmarks[0];
     }
   });
-  const video = document.createElement("video");
+  const video = webcam.canvas; // 使用 TM 的 video 畫面即可
   // 攝影機畫面僅透過 TM 或 MediaPipe 顯示，避免重疊
   const camera = new Camera(video, {
     onFrame: async () => {
