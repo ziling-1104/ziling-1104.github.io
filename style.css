@@ -6,11 +6,11 @@
 }
 
 body {
-  font-family: "Comic Sans MS", Arial, sans-serif;
+  font-family: "Arial", sans-serif;
   line-height: 1.6;
   background: #ffffff;
   color: #222;
-  transition: background-color 0.6s ease;
+  transition: background-color 0.5s ease;
 }
 
 /* ===== 導覽列樣式 ===== */
@@ -87,12 +87,16 @@ section {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== MoodMate+ 戀愛感升級區塊 ===== */
+/* ===== MoodMate+ 區塊 ===== */
 #moodmate {
-  background: #fff0f5;
   text-align: center;
   padding: 4rem 2rem;
-  transition: background-color 0.6s ease;
+}
+
+#webcam-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 #result {
@@ -108,13 +112,17 @@ section {
 
 #emoji {
   font-size: 3.2em;
-  animation: pop 1s infinite ease-in-out alternate;
   margin-bottom: 0.5rem;
 }
 
-@keyframes pop {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.15); }
+/* emoji 語音播放動畫 */
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25) rotate(5deg); }
+}
+
+.talking {
+  animation: bounce 0.6s ease-in-out;
 }
 
 #suggestion {
@@ -128,6 +136,7 @@ section {
   line-height: 1.8;
 }
 
+/* ===== 按鈕 ===== */
 button {
   margin: 0.5rem;
   padding: 0.6rem 1.4rem;
@@ -153,12 +162,7 @@ button:hover {
   background-color: #5eb4d4;
 }
 
-#webcam-container {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
+/* ===== 歷史紀錄 ===== */
 #history {
   margin-top: 2rem;
   max-width: 420px;
@@ -187,7 +191,7 @@ button:hover {
   text-align: center;
 }
 
-/* ===== 響應式手機版樣式 ===== */
+/* ===== 響應式手機版 ===== */
 @media (max-width: 768px) {
   .profile {
     flex-direction: column;
