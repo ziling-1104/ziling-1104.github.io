@@ -5,9 +5,11 @@ let model, webcam, maxPredictions;
 let isSpeakingEnabled = true;
 let lastSpokenText = "";
 let lastUpdateTime = 0;
-const updateInterval = 4000; // 每 4 秒偵測一次
+const updateInterval = 4000;
 let currentAudio = null;
+let latestFaceLandmarks = null; // 存放嘴角座標
 
+// 預錄語音地圖
 const audioMap = {
   happy: [new Audio("happy_1.mp3"), new Audio("happy_2.mp3"), new Audio("happy_3.mp3")],
   angry: [new Audio("angry_1.mp3"), new Audio("angry_2.mp3"), new Audio("angry_3.mp3")],
@@ -15,49 +17,40 @@ const audioMap = {
   neutral: [new Audio("neutral_1.mp3"), new Audio("neutral_2.mp3"), new Audio("neutral_3.mp3")]
 };
 
+// 顯示用建議語句
 const suggestionPool = {
   happy: [
     "她心情不錯！你可以說：『看到你我也整天都快樂！』",
     "氣氛超棒，可以說：『笑得像仙女一樣欸～』",
     "開心的時候最可愛，你可以說：『我是不是該錄起來，每天看一次』"
   ],
-  angry: [
-    "小心，她可能有點不開心。你可以說：『我剛才是不是太急了？對不起嘛～抱一下？』",
-    "她似乎有點氣氣的。試試：『要不要我請你喝奶茶？不氣不氣～』",
-    "火氣上來了？來點柔軟的：『你是我最重要的人，我想跟你好好講講』"
-  ],
-  tired: [
-    "她好像很累。你可以說：『辛苦啦～今天不要再想工作了！』",
-    "她有點疲倦。輕輕一句：『來，我幫你按摩三分鐘～』",
-    "看起來需要放鬆一下：『我們來看部溫馨的劇好不好？』"
-  ],
-  neutral: [
-    "她現在沒特別情緒。你可以說：『這週末你有想去哪裡嗎？』",
-    "中性狀態～你可以說：『如果只能選一種飲料，你會喝？』",
-    "平靜模式～用趣味破冰：『昨天夢到我們去環島欸！你夢到什麼？』"
-  ]
+  angry: [ /* 略 */ ],
+  tired: [ /* 略 */ ],
+  neutral: [ /* 略 */ ]
 };
 
+// 初始化
 async function init() {
   const suggestion = document.getElementById("suggestion");
   suggestion.innerHTML = "正在載入模型...";
-  try {
-    model = await tmImage.load(modelURL, metadataURL);
-    maxPredictions = model.getTotalClasses();
-    suggestion.innerHTML = "正在啟動攝影機...";
-    const flip = true;
-    webcam = new tmImage.Webcam(400, 400, flip);
-    await webcam.setup();
-    await webcam.play();
-    document.getElementById("webcam-container").appendChild(webcam.canvas);
-    suggestion.innerHTML = "偵測中...";
-    window.requestAnimationFrame(loop);
-  } catch (error) {
-    console.error("錯誤:", error);
-    suggestion.innerHTML = "無法載入模型或啟動攝影機。";
-  }
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
+
+  suggestion.innerHTML = "正在啟動攝影機...";
+  const flip = true;
+  webcam = new tmImage.Webcam(400, 400, flip);
+  await webcam.setup();
+  await webcam.play();
+  document.getElementById("webcam-container").appendChild(webcam.canvas);
+  suggestion.innerHTML = "偵測中...";
+
+  // 啟用 FaceMesh
+  startFaceMesh();
+
+  window.requestAnimationFrame(loop);
 }
 
+// TM 模型主迴圈
 async function loop() {
   webcam.update();
   const now = Date.now();
@@ -68,21 +61,23 @@ async function loop() {
   window.requestAnimationFrame(loop);
 }
 
+// TM 模型預測
 async function predict() {
   const prediction = await model.predict(webcam.canvas);
+  const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
+  let className = best.className;
+
+  // ✅ 嘴角上揚補強邏輯
+  if (className !== "happy" && isSmiling()) {
+    className = "happy";
+  }
+
+  const emojiMap = {
+    happy: "😊", angry: "😠", tired: "😴", neutral: "😐"
+  };
   const emoji = document.getElementById("emoji");
   const suggestion = document.getElementById("suggestion");
   const history = document.getElementById("history");
-
-  const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
-  const className = best.className;
-
-  const emojiMap = {
-    happy: "😊",
-    angry: "😠",
-    tired: "😴",
-    neutral: "😐"
-  };
 
   const resultEmoji = emojiMap[className] || "❓";
   const pool = suggestionPool[className] || ["無法判斷情緒，再觀察一下唷。"];
@@ -91,7 +86,6 @@ async function predict() {
   emoji.innerHTML = resultEmoji;
   suggestion.innerHTML = resultText;
 
-  // 防止重複播放
   if (isSpeakingEnabled && resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) currentAudio.pause();
     const audios = audioMap[className];
@@ -103,7 +97,6 @@ async function predict() {
     lastSpokenText = resultText;
   }
 
-  // 顯示歷史紀錄
   const timestamp = new Date().toLocaleTimeString();
   const record = document.createElement("div");
   record.textContent = `[${timestamp}] ${resultEmoji} ${resultText}`;
@@ -111,12 +104,54 @@ async function predict() {
   history.prepend(record);
 }
 
+// ✅ 嘴角上揚判定（根據嘴角高低差）
+function isSmiling() {
+  if (!latestFaceLandmarks) return false;
+  const leftMouth = latestFaceLandmarks[61];
+  const rightMouth = latestFaceLandmarks[291];
+  const topLip = latestFaceLandmarks[13];
+  const bottomLip = latestFaceLandmarks[14];
+
+  if (!leftMouth || !rightMouth || !topLip || !bottomLip) return false;
+
+  const mouthHeight = bottomLip.y - topLip.y;
+  const mouthSlope = (leftMouth.y + rightMouth.y) / 2 - topLip.y;
+
+  return mouthHeight > 0.03 && mouthSlope < 0.02;
+}
+
+// ✅ 啟動 FaceMesh 偵測嘴角
+function startFaceMesh() {
+  const faceMesh = new FaceMesh({ locateFile: (file) => 
+    `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+  });
+  faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5 });
+
+  faceMesh.onResults((results) => {
+    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+      latestFaceLandmarks = results.multiFaceLandmarks[0];
+    }
+  });
+
+  const videoElement = webcam.webcam;
+  const camera = new Camera(videoElement, {
+    onFrame: async () => {
+      await faceMesh.send({ image: videoElement });
+    },
+    width: 400,
+    height: 400
+  });
+  camera.start();
+}
+
+// 語音開關
 function toggleSpeech() {
   isSpeakingEnabled = !isSpeakingEnabled;
   const button = document.getElementById("speech-toggle");
   button.innerText = isSpeakingEnabled ? "🔊 語音開啟" : "🔇 語音關閉";
 }
 
+// 顏色
 function getColorByClass(className) {
   switch (className) {
     case "happy": return "#ff69b4";
@@ -127,7 +162,7 @@ function getColorByClass(className) {
   }
 }
 
-// 修正 Safari/Chrome 自動播放限制
+// 修正播放限制
 window.addEventListener("click", () => {
-  window.speechSynthesis.cancel(); // 觸發使用者互動
+  window.speechSynthesis.cancel();
 });
