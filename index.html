@@ -18,37 +18,23 @@
   </header>
 
   <main>
-    <!-- 關於我區塊 -->
     <section id="about">
       <div class="profile">
         <img src="profile.jpg" alt="個人照片" class="profile-pic" />
         <h1>陳子陵</h1>
       </div>
-      <p>雖然主修企管，但對行銷充滿熱情，特別喜歡品牌行銷與市場策略。擅長觀察市場趨勢、分析消費者行為，並運用創意提升品牌影響力。</p>
-      <p>我認為行銷不只是推廣產品，而是與消費者建立連結，塑造品牌價值。個性活潑大方，善於溝通與協作，喜歡分享創意並靈活應對挑戰。</p>
-      <p>對數位行銷、社群經營與內容行銷特別感興趣，希望透過實習累積經驗，學習如何運用行銷策略創造價值。期待持續學習與成長，將創新思維與策略應用於市場，為品牌帶來實際影響力。</p>
+      <p>雖然主修企管，但對行銷充滿熱情，特別喜歡品牌行銷與市場策略...</p>
     </section>
 
-    <!-- 作品集區塊 -->
     <section id="projects">
       <h2>專業技能與作品集</h2>
       <div class="project-grid">
-        <div class="project-card">
-          <h3>品牌行銷</h3>
-          <p>市場趨勢分析<br>消費者行為研究<br>品牌策略規劃</p>
-        </div>
-        <div class="project-card">
-          <h3>數位行銷</h3>
-          <p>社群媒體經營<br>內容行銷<br>策略執行與追蹤</p>
-        </div>
-        <div class="project-card">
-          <h3>專案實作</h3>
-          <p>We Sweet 品牌提案<br>校園活動規劃<br>實戰簡報製作</p>
-        </div>
+        <div class="project-card"><h3>品牌行銷</h3><p>市場分析、消費者研究、品牌策略</p></div>
+        <div class="project-card"><h3>數位行銷</h3><p>社群經營、內容行銷、策略執行</p></div>
+        <div class="project-card"><h3>專案實作</h3><p>We Sweet 品牌提案、校園活動規劃</p></div>
       </div>
     </section>
 
-    <!-- MoodMate+ 區塊 -->
     <section id="moodmate">
       <h2>MoodMate+ 戀愛情緒助理</h2>
       <div id="webcam-container"></div>
@@ -61,9 +47,17 @@
         <button id="speech-toggle" onclick="toggleSpeech()">🔊 語音開啟</button>
       </div>
       <div id="history"></div>
+
+      <!-- 統計區塊 -->
+      <div id="emotion-chart">
+        <h3>情緒偵測統計</h3>
+        <div class="bar" data-emotion="happy"></div>
+        <div class="bar" data-emotion="angry"></div>
+        <div class="bar" data-emotion="tired"></div>
+        <div class="bar" data-emotion="neutral"></div>
+      </div>
     </section>
 
-    <!-- 聯絡方式 -->
     <section id="contact">
       <h2>聯絡方式</h2>
       <p>Email：a0903959590@gmail.com</p>
@@ -71,11 +65,8 @@
     </section>
   </main>
 
-  <!-- 僅保留 MediaPipe 模組 -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-  <!-- 你的主控程式 -->
   <script src="script.js"></script>
 </body>
 </html>
