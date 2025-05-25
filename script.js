@@ -32,32 +32,23 @@ const suggestionPool = {
 };
 
 const audioMap = {
-  happy: [
-    new Audio("happy_1.mp3"),
-    new Audio("happy_2.mp3"),
-    new Audio("happy_3.mp3")
-  ],
-  angry: [
-    new Audio("angry_1.mp3"),
-    new Audio("angry_2.mp3"),
-    new Audio("angry_3.mp3")
-  ],
-  tired: [
-    new Audio("tired_1.mp3"),
-    new Audio("tired_2.mp3"),
-    new Audio("tired_3.mp3")
-  ],
-  neutral: [
-    new Audio("neutral_1.mp3"),
-    new Audio("neutral_2.mp3"),
-    new Audio("neutral_3.mp3")
-  ]
+  happy: [new Audio("happy_1.mp3"), new Audio("happy_2.mp3"), new Audio("happy_3.mp3")],
+  angry: [new Audio("angry_1.mp3"), new Audio("angry_2.mp3"), new Audio("angry_3.mp3")],
+  tired: [new Audio("tired_1.mp3"), new Audio("tired_2.mp3"), new Audio("tired_3.mp3")],
+  neutral: [new Audio("neutral_1.mp3"), new Audio("neutral_2.mp3"), new Audio("neutral_3.mp3")]
 };
 
 async function init() {
+  const suggestion = document.getElementById("suggestion");
+  suggestion.innerHTML = "正在啟動鏡頭...";
+
+  webcam = new tmImage.Webcam(400, 400, true);
+  await webcam.setup();
+  await webcam.play();
+  document.getElementById("webcam-container").appendChild(webcam.canvas);
+
   const faceMesh = new FaceMesh({
-    locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
   });
 
   faceMesh.setOptions({
@@ -73,43 +64,28 @@ async function init() {
     }
   });
 
-  webcam = new Camera(document.createElement("video"), {
-    onFrame: async () => {
-      await faceMesh.send({ image: webcam.video });
-      detectEmotion();
-    },
-    width: 400,
-    height: 400
-  });
+  async function loop() {
+    webcam.update();
+    await faceMesh.send({ image: webcam.canvas });
+    detectEmotion();
+    requestAnimationFrame(loop);
+  }
 
-  await webcam.start();
-  document.getElementById("webcam-container").appendChild(webcam.video);
+  await faceMesh.send({ image: webcam.canvas });
+  requestAnimationFrame(loop);
 }
 
 function detectEmotion() {
   if (!latestFaceLandmarks) return;
 
-  const mouthTop = averageY([13]);
-  const mouthBottom = averageY([14]);
-  const mouthOpen = mouthBottom - mouthTop;
-
-  const eyeTop = averageY([159, 160, 161]);
-  const eyeBottom = averageY([144, 145, 153]);
-  const eyeOpen = eyeBottom - eyeTop;
-
-  const brow = averageY([65, 66, 70]);
-  const eye = averageY([33, 133]);
-  const browLift = eye - brow;
+  const mouthOpen = averageY([14]) - averageY([13]);
+  const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
+  const browLift = averageY([33, 133]) - averageY([65, 66]);
 
   let className = "neutral";
-
-  if (mouthOpen > 0.035) {
-    className = "tired";
-  } else if (mouthOpen < 0.010) {
-    className = "angry";
-  } else if (browLift > 0.015 && eyeOpen > 0.01) {
-    className = "happy";
-  }
+  if (mouthOpen > 0.035) className = "tired";
+  else if (mouthOpen < 0.010) className = "angry";
+  else if (browLift > 0.015 && eyeOpen > 0.01) className = "happy";
 
   const now = Date.now();
   if (className === lastEmotion && now - lastTriggerTime < cooldown) return;
@@ -121,10 +97,7 @@ function detectEmotion() {
 }
 
 function averageY(indices) {
-  return (
-    indices.map((i) => latestFaceLandmarks[i].y).reduce((a, b) => a + b, 0) /
-    indices.length
-  );
+  return indices.map(i => latestFaceLandmarks[i].y).reduce((a, b) => a + b, 0) / indices.length;
 }
 
 function displayEmotion(className) {
@@ -134,7 +107,6 @@ function displayEmotion(className) {
     tired: "😴",
     neutral: "😐"
   };
-
   const bgColorMap = {
     happy: "#fff0f5",
     angry: "#ffeaea",
@@ -146,15 +118,14 @@ function displayEmotion(className) {
   const suggestion = document.getElementById("suggestion");
   const history = document.getElementById("history");
 
-  const resultEmoji = emojiMap[className] || "❓";
-  const textPool = suggestionPool[className] || ["觀察中..."];
+  const resultEmoji = emojiMap[className];
+  const textPool = suggestionPool[className];
   const resultText = textPool[Math.floor(Math.random() * textPool.length)];
 
   emoji.innerHTML = resultEmoji;
   suggestion.innerHTML = resultText;
-  document.body.style.backgroundColor = bgColorMap[className] || "#fff";
+  document.body.style.backgroundColor = bgColorMap[className];
 
-  // 播放 mp3
   if (resultText !== lastSpokenText) {
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
