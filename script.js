@@ -1,3 +1,4 @@
+
 let model, webcam, maxPredictions;
 let latestFaceLandmarks = null;
 let isSpeakingEnabled = true;
