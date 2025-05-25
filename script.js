@@ -1,11 +1,9 @@
 let webcam;
 let latestFaceLandmarks = null;
 const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
-
 let lastEmotion = "";
 let lastTriggerTime = 0;
 const cooldown = 3000;
-
 let lastSpokenText = "";
 
 const suggestionPool = {
@@ -32,10 +30,26 @@ const suggestionPool = {
 };
 
 const audioMap = {
-  happy: [new Audio("happy_1.mp3"), new Audio("happy_2.mp3"), new Audio("happy_3.mp3")],
-  angry: [new Audio("angry_1.mp3"), new Audio("angry_2.mp3"), new Audio("angry_3.mp3")],
-  tired: [new Audio("tired_1.mp3"), new Audio("tired_2.mp3"), new Audio("tired_3.mp3")],
-  neutral: [new Audio("neutral_1.mp3"), new Audio("neutral_2.mp3"), new Audio("neutral_3.mp3")]
+  happy: [
+    new Audio("happy_1.mp3"),
+    new Audio("happy_2.mp3"),
+    new Audio("happy_3.mp3")
+  ],
+  angry: [
+    new Audio("angry_1.mp3"),
+    new Audio("angry_2.mp3"),
+    new Audio("angry_3.mp3")
+  ],
+  tired: [
+    new Audio("tired_1.mp3"),
+    new Audio("tired_2.mp3"),
+    new Audio("tired_3.mp3")
+  ],
+  neutral: [
+    new Audio("neutral_1.mp3"),
+    new Audio("neutral_2.mp3"),
+    new Audio("neutral_3.mp3")
+  ]
 };
 
 async function init() {
@@ -70,18 +84,15 @@ async function init() {
     detectEmotion();
     requestAnimationFrame(loop);
   }
-
   await faceMesh.send({ image: webcam.canvas });
   requestAnimationFrame(loop);
 }
 
 function detectEmotion() {
   if (!latestFaceLandmarks) return;
-
   const mouthOpen = averageY([14]) - averageY([13]);
   const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
   const browLift = averageY([33, 133]) - averageY([65, 66]);
-
   let className = "neutral";
   if (mouthOpen > 0.035) className = "tired";
   else if (mouthOpen < 0.010) className = "angry";
@@ -89,10 +100,8 @@ function detectEmotion() {
 
   const now = Date.now();
   if (className === lastEmotion && now - lastTriggerTime < cooldown) return;
-
   lastEmotion = className;
   lastTriggerTime = now;
-
   displayEmotion(className);
 }
 
@@ -162,4 +171,8 @@ function updateChart() {
     bar.style.width = emotionLog[emotion] * 10 + "px";
     bar.innerText = `${emotion}：${emotionLog[emotion]}`;
   });
+}
+
+function toggleSpeech() {
+  // 保持兼容的功能（可略過）
 }
