@@ -38,15 +38,16 @@ const suggestionPool = {
 async function init() {
   const suggestion = document.getElementById("suggestion");
   suggestion.innerHTML = "正在啟動攝影機...";
-  webcam = new Camera(document.createElement("video"), {
+  const video = document.createElement("video");
+  document.getElementById("webcam-container").appendChild(video);
+  const camera = new Camera(video, {
     onFrame: async () => {
-      await faceMesh.send({ image: webcam.video });
+      await faceMesh.send({ image: video });
     },
     width: 400,
     height: 400
   });
-  webcam.start();
-  document.getElementById("webcam-container").appendChild(webcam.video);
+  await camera.start();
   suggestion.innerHTML = "偵測中...";
   startFaceMesh();
   window.requestAnimationFrame(loop);
@@ -64,25 +65,44 @@ async function loop() {
 function detectEmotion() {
   if (!latestFaceLandmarks) return;
 
-  const left = latestFaceLandmarks[61];
-  const right = latestFaceLandmarks[291];
-  const topLip = latestFaceLandmarks[13];
-  const bottomLip = latestFaceLandmarks[14];
+  const leftEyeTop = averageY([159, 160, 161]);
+  const leftEyeBottom = averageY([144, 145, 153]);
+  const eyeOpen = leftEyeBottom - leftEyeTop;
 
-  const mouthHeight = bottomLip.y - topLip.y;
-  const mouthSlope = ((left.y + right.y) / 2 - topLip.y);
+  const leftBrow = averageY([65, 66, 70]);
+  const leftEye = averageY([33, 133]);
+  const browLift = leftEye - leftBrow;
+
+  const mouthTop = averageY([13]);
+  const mouthBottom = averageY([14]);
+  const mouthOpen = mouthBottom - mouthTop;
+
+  const mouthLeft = latestFaceLandmarks[61];
+  const mouthRight = latestFaceLandmarks[291];
+  const mouthSlope = ((mouthLeft.y + mouthRight.y) / 2 - mouthTop);
 
   let className = "neutral";
-  if (mouthSlope < 0.005) className = "happy";
-  else if (mouthSlope > 0.06) className = "angry";
-  else if (mouthHeight > 0.09) className = "tired";
+  if (mouthSlope < 0.005 && browLift > 0.015) className = "happy";
+  else if (browLift < -0.005 && eyeOpen < 0.012) className = "angry";
+  else if (eyeOpen < 0.005 && mouthOpen > 0.05) className = "tired";
 
   displayEmotion(className);
+}
+
+function averageY(indices) {
+  return indices.map(i => latestFaceLandmarks[i].y).reduce((a, b) => a + b) / indices.length;
 }
 
 function displayEmotion(className) {
   const emojiMap = {
     happy: "😊", angry: "😠", tired: "😴", neutral: "😐"
+  };
+
+  const bgColorMap = {
+    happy: "#fff0f5",
+    angry: "#ffeaea",
+    tired: "#e8f0ff",
+    neutral: "#f4f4f4"
   };
 
   const emoji = document.getElementById("emoji");
@@ -95,6 +115,7 @@ function displayEmotion(className) {
 
   emoji.innerHTML = resultEmoji;
   suggestion.innerHTML = resultText;
+  document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
   if (isSpeakingEnabled && resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) currentAudio.pause();
@@ -103,6 +124,10 @@ function displayEmotion(className) {
       currentAudio = audios[Math.floor(Math.random() * audios.length)];
       currentAudio.currentTime = 0;
       currentAudio.play();
+
+      // emoji 彈跳動畫
+      emoji.classList.add("talking");
+      setTimeout(() => emoji.classList.remove("talking"), 1000);
     }
     lastSpokenText = resultText;
   }
