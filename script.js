@@ -1,9 +1,11 @@
 let webcam;
 let latestFaceLandmarks = null;
 const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
+
 let lastEmotion = "";
 let lastTriggerTime = 0;
 const cooldown = 3000;
+
 let lastSpokenText = "";
 
 const suggestionPool = {
@@ -53,16 +55,9 @@ const audioMap = {
 };
 
 async function init() {
-  const suggestion = document.getElementById("suggestion");
-  suggestion.innerHTML = "正在啟動鏡頭...";
-
-  webcam = new tmImage.Webcam(400, 400, true);
-  await webcam.setup();
-  await webcam.play();
-  document.getElementById("webcam-container").appendChild(webcam.canvas);
-
   const faceMesh = new FaceMesh({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    locateFile: (file) =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
   });
 
   faceMesh.setOptions({
@@ -78,35 +73,51 @@ async function init() {
     }
   });
 
-  async function loop() {
-    webcam.update();
-    await faceMesh.send({ image: webcam.canvas });
-    detectEmotion();
-    requestAnimationFrame(loop);
-  }
-  await faceMesh.send({ image: webcam.canvas });
-  requestAnimationFrame(loop);
+  webcam = new Camera(document.createElement("video"), {
+    onFrame: async () => {
+      await faceMesh.send({ image: webcam.video });
+      detectEmotion();
+    },
+    width: 400,
+    height: 400
+  });
+
+  await webcam.start();
+  document.getElementById("webcam-container").appendChild(webcam.video);
 }
 
 function detectEmotion() {
   if (!latestFaceLandmarks) return;
+
   const mouthOpen = averageY([14]) - averageY([13]);
   const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
   const browLift = averageY([33, 133]) - averageY([65, 66]);
+
   let className = "neutral";
-  if (mouthOpen > 0.035) className = "tired";
-  else if (mouthOpen < 0.010) className = "angry";
-  else if (browLift > 0.015 && eyeOpen > 0.01) className = "happy";
+
+  // 靈敏版判斷邏輯
+  if (mouthOpen > 0.025) {
+    className = "tired";
+  } else if (mouthOpen < 0.012 && browLift < 0.010) {
+    className = "angry";
+  } else if (browLift > 0.012 && eyeOpen > 0.008) {
+    className = "happy";
+  }
 
   const now = Date.now();
   if (className === lastEmotion && now - lastTriggerTime < cooldown) return;
+
   lastEmotion = className;
   lastTriggerTime = now;
+
   displayEmotion(className);
 }
 
 function averageY(indices) {
-  return indices.map(i => latestFaceLandmarks[i].y).reduce((a, b) => a + b, 0) / indices.length;
+  return (
+    indices.map((i) => latestFaceLandmarks[i].y).reduce((a, b) => a + b, 0) /
+    indices.length
+  );
 }
 
 function displayEmotion(className) {
@@ -116,6 +127,7 @@ function displayEmotion(className) {
     tired: "😴",
     neutral: "😐"
   };
+
   const bgColorMap = {
     happy: "#fff0f5",
     angry: "#ffeaea",
@@ -127,14 +139,15 @@ function displayEmotion(className) {
   const suggestion = document.getElementById("suggestion");
   const history = document.getElementById("history");
 
-  const resultEmoji = emojiMap[className];
-  const textPool = suggestionPool[className];
+  const resultEmoji = emojiMap[className] || "❓";
+  const textPool = suggestionPool[className] || ["觀察中..."];
   const resultText = textPool[Math.floor(Math.random() * textPool.length)];
 
   emoji.innerHTML = resultEmoji;
   suggestion.innerHTML = resultText;
-  document.body.style.backgroundColor = bgColorMap[className];
+  document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
+  // 播放 mp3（避免重複播放）
   if (resultText !== lastSpokenText) {
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
@@ -144,12 +157,14 @@ function displayEmotion(className) {
     lastSpokenText = resultText;
   }
 
+  // 加入歷史紀錄
   const timestamp = new Date().toLocaleTimeString();
   const record = document.createElement("div");
   record.textContent = `[${timestamp}] ${resultEmoji} ${resultText}`;
   record.style.color = getColorByClass(className);
   history.prepend(record);
 
+  // 更新統計圖表
   emotionLog[className]++;
   updateChart();
 }
@@ -174,5 +189,5 @@ function updateChart() {
 }
 
 function toggleSpeech() {
-  // 保持兼容的功能（可略過）
+  // 若你未使用開關語音功能，可略過這段
 }
