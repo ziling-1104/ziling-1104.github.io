@@ -1,9 +1,9 @@
-/* 基本設定 */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 body {
   font-family: Arial, sans-serif;
   line-height: 1.6;
@@ -12,7 +12,6 @@ body {
   transition: background-color 0.6s ease;
 }
 
-/* 導覽列 */
 header {
   background: #5734d5;
   padding: 1rem;
@@ -35,7 +34,6 @@ main {
   margin-top: 70px;
 }
 
-/* 關於我 */
 #about {
   background: #7ce2e4;
   text-align: center;
@@ -56,7 +54,6 @@ main {
   border: 4px solid #5734d5;
 }
 
-/* 作品集 */
 #projects {
   background: #ffffff;
 }
@@ -74,7 +71,6 @@ main {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* MoodMate 區塊 */
 #moodmate {
   background: transparent;
   text-align: center;
@@ -97,6 +93,7 @@ main {
   color: #5734d5;
   margin-top: 1rem;
 }
+
 button {
   margin: 0.5rem;
   padding: 0.6rem 1.2rem;
@@ -117,6 +114,7 @@ button:hover {
 #speech-toggle:hover {
   background-color: #5eb4d4;
 }
+
 #webcam-container {
   width: 100%;
   max-width: 400px;
@@ -138,7 +136,6 @@ button:hover {
   padding-bottom: 0.3rem;
 }
 
-/* 統計條 */
 #chart {
   margin-top: 2rem;
   max-width: 400px;
@@ -159,7 +156,6 @@ button:hover {
   overflow: hidden;
 }
 
-/* emoji 雨動畫 */
 .emoji-float {
   position: fixed;
   top: -2em;
@@ -174,7 +170,6 @@ button:hover {
   }
 }
 
-/* emoji 說話彈跳 */
 @keyframes bounce {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25) rotate(5deg); }
@@ -183,13 +178,11 @@ button:hover {
   animation: bounce 0.6s ease-in-out;
 }
 
-/* 聯絡方式 */
 #contact {
   background: #f5f5f5;
   text-align: center;
 }
 
-/* 手機響應式 */
 @media (max-width: 768px) {
   .profile {
     flex-direction: column;
