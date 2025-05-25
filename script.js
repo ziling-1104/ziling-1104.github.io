@@ -1,3 +1,4 @@
+
 let model, webcam, maxPredictions;
 let latestFaceLandmarks = null;
 let isSpeakingEnabled = true;
@@ -95,8 +96,41 @@ function startFaceMesh() {
 }
 
 async function init() {
-  await loadTeachableModel();
-  startFaceMesh();
+  const suggestion = document.getElementById("suggestion");
+  suggestion.innerHTML = "啟動攝影機中...";
+
+  // 優先啟動 webcam 並顯示
+  webcam = new tmImage.Webcam(400, 400, true);
+  await webcam.setup();
+  await webcam.play();
+  document.getElementById("webcam-container").appendChild(webcam.canvas);
+  suggestion.innerHTML = "鏡頭就緒，載入模型中...";
+
+  // 接著載入模型與 MediaPipe
+  model = await tmImage.load(
+    "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/model.json",
+    "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/metadata.json"
+  );
+  maxPredictions = model.getTotalClasses();
+
+  faceMesh = new FaceMesh({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+  });
+  faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5 });
+  faceMesh.onResults((results) => {
+    if (results.multiFaceLandmarks.length > 0) {
+      latestLandmarks = results.multiFaceLandmarks[0];
+    }
+  });
+
+  camera = new Camera(webcam.webcam, {
+    onFrame: async () => await faceMesh.send({ image: webcam.canvas }),
+    width: 400,
+    height: 400
+  });
+  camera.start();
+
+  suggestion.innerHTML = "偵測中...";
   window.requestAnimationFrame(loop);
 }
 
