@@ -1,11 +1,12 @@
 let webcam;
 let latestFaceLandmarks = null;
-let lastUpdateTime = 0;
-const updateInterval = 2000;
 const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
 
+let lastEmotion = "";
+let lastTriggerTime = 0;
+const cooldown = 3000;
+
 let lastSpokenText = "";
-let currentAudio = null;
 
 const suggestionPool = {
   happy: [
@@ -73,26 +74,19 @@ async function init() {
   });
 
   webcam = new Camera(document.createElement("video"), {
-    onFrame: async () => await faceMesh.send({ image: webcam.video }),
+    onFrame: async () => {
+      await faceMesh.send({ image: webcam.video });
+      detectEmotion();
+    },
     width: 400,
     height: 400
   });
 
   await webcam.start();
   document.getElementById("webcam-container").appendChild(webcam.video);
-  window.requestAnimationFrame(loop);
 }
 
-async function loop() {
-  const now = Date.now();
-  if (now - lastUpdateTime > updateInterval) {
-    await detectEmotion();
-    lastUpdateTime = now;
-  }
-  window.requestAnimationFrame(loop);
-}
-
-async function detectEmotion() {
+function detectEmotion() {
   if (!latestFaceLandmarks) return;
 
   const mouthTop = averageY([13]);
@@ -116,6 +110,12 @@ async function detectEmotion() {
   } else if (browLift > 0.015 && eyeOpen > 0.01) {
     className = "happy";
   }
+
+  const now = Date.now();
+  if (className === lastEmotion && now - lastTriggerTime < cooldown) return;
+
+  lastEmotion = className;
+  lastTriggerTime = now;
 
   displayEmotion(className);
 }
@@ -154,14 +154,12 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
-  // 播放語音（避免重複播放）
+  // 播放 mp3
   if (resultText !== lastSpokenText) {
-    if (currentAudio && !currentAudio.paused) currentAudio.pause();
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
-      currentAudio = audios[Math.floor(Math.random() * audios.length)];
-      currentAudio.currentTime = 0;
-      currentAudio.play();
+      const audio = new Audio(audios[Math.floor(Math.random() * audios.length)].src);
+      audio.play();
     }
     lastSpokenText = resultText;
   }
