@@ -53,7 +53,7 @@ async function init() {
   document.getElementById("webcam-container").appendChild(webcam.canvas);
   suggestion.innerHTML = "偵測中...";
 
-  startFaceMesh(); // 啟動嘴角追蹤
+  startFaceMesh();
   window.requestAnimationFrame(loop);
 }
 
@@ -66,7 +66,7 @@ async function loop() {
   }
   setTimeout(() => {
     window.requestAnimationFrame(loop);
-  }, 200); // 穩定節奏
+  }, 200);
 }
 
 async function predict() {
@@ -74,7 +74,7 @@ async function predict() {
   const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
   let className = best.className;
 
-  className = getCorrectedClass(className); // 嘴角補強判斷
+  className = getCorrectedClass(className);
   displayEmotion(className);
 }
 
@@ -89,13 +89,9 @@ function getCorrectedClass(tmClass) {
   const mouthHeight = bottomLip.y - topLip.y;
   const mouthSlope = ((left.y + right.y) / 2 - topLip.y);
 
-  // happy：嘴角上揚
   if (tmClass !== "happy" && mouthSlope < 0.02) return "happy";
-  // angry：嘴角下壓
   if (tmClass !== "angry" && mouthSlope > 0.05) return "angry";
-  // tired：嘴巴大張
   if (tmClass !== "tired" && mouthHeight > 0.07) return "tired";
-  // neutral：嘴角平且嘴巴沒打開
   if (
     mouthSlope >= 0.02 && mouthSlope <= 0.05 &&
     mouthHeight <= 0.05 &&
