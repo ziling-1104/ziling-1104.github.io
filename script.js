@@ -1,4 +1,3 @@
-
 let model, webcam, maxPredictions;
 let latestFaceLandmarks = null;
 let isSpeakingEnabled = true;
@@ -171,7 +170,7 @@ function displayEmotion(className) {
   triggerEmojiRain(resultEmoji);
 
   // 語音與音效播放
-  if (isSpeakingEnabled && resultText !== lastSpokenText) {
+  if (!isLowLoadMode && isSpeakingEnabled && resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) currentAudio.pause();
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
@@ -238,3 +237,11 @@ function getColorByClass(className) {
 window.addEventListener("click", () => {
   window.speechSynthesis.cancel();
 });
+
+let isLowLoadMode = false;
+
+function toggleLowLoad() {
+  isLowLoadMode = !isLowLoadMode;
+  const btn = document.getElementById("load-toggle");
+  btn.innerText = isLowLoadMode ? "⚡ 輕量模式開啟" : "⚙️ 全功能模式";
+}
