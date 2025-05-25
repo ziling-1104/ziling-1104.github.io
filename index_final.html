@@ -17,6 +17,7 @@
   </header>
 
   <main>
+    <!-- 關於我 -->
     <section id="about">
       <div class="profile">
         <img src="profile.jpg" alt="個人照片" class="profile-pic" />
@@ -27,6 +28,7 @@
       <p>對數位行銷、社群經營與內容行銷特別感興趣，希望透過實習累積經驗，學習如何運用行銷策略創造價值。期待持續學習與成長，將創新思維與策略應用於市場，為品牌帶來實際影響力。</p>
     </section>
 
+    <!-- 專案區塊 -->
     <section id="projects">
       <h2>專業技能與作品集</h2>
       <div class="project-grid">
@@ -45,6 +47,7 @@
       </div>
     </section>
 
+    <!-- MoodMate+ -->
     <section id="moodmate">
       <h2>MoodMate+ 戀愛情緒助理</h2>
       <div id="webcam-container"></div>
@@ -55,9 +58,10 @@
       <div>
         <button onclick="init()">✨ 啟動戀愛助理</button>
         <button id="speech-toggle" onclick="toggleSpeech()">🔊 語音開啟</button>
-        <button id="load-toggle" onclick="toggleLowLoad()">⚙️ 全功能模式</button>
       </div>
       <div id="history"></div>
+
+      <!-- 統計圖表 -->
       <h3>情緒統計圖表</h3>
       <div id="chart">
         <div class="bar" data-emotion="happy"></div>
@@ -67,12 +71,15 @@
       </div>
     </section>
 
+    <!-- 聯絡方式 -->
     <section id="contact">
       <h2>聯絡方式</h2>
       <p>Email：a0903959590@gmail.com</p>
+      <p>LinkedIn：<a href="https://linkedin.com/in/ziling" target="_blank">linkedin.com/in/ziling</a></p>
     </section>
   </main>
 
+  <!-- 外部 JS 模組 -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
