@@ -1,7 +1,3 @@
-const modelURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/model.json";
-const metadataURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/metadata.json";
-
-let model, webcam, maxPredictions;
 let isSpeakingEnabled = true;
 let lastSpokenText = "";
 let lastUpdateTime = 0;
@@ -41,45 +37,32 @@ const suggestionPool = {
 
 async function init() {
   const suggestion = document.getElementById("suggestion");
-  suggestion.innerHTML = "正在載入模型...";
-  model = await tmImage.load(modelURL, metadataURL);
-  maxPredictions = model.getTotalClasses();
-
   suggestion.innerHTML = "正在啟動攝影機...";
-  const flip = true;
-  webcam = new tmImage.Webcam(400, 400, flip);
-  await webcam.setup();
-  await webcam.play();
-  document.getElementById("webcam-container").appendChild(webcam.canvas);
+  webcam = new Camera(document.createElement("video"), {
+    onFrame: async () => {
+      await faceMesh.send({ image: webcam.video });
+    },
+    width: 400,
+    height: 400
+  });
+  webcam.start();
+  document.getElementById("webcam-container").appendChild(webcam.video);
   suggestion.innerHTML = "偵測中...";
-
   startFaceMesh();
   window.requestAnimationFrame(loop);
 }
 
 async function loop() {
-  webcam.update();
   const now = Date.now();
   if (now - lastUpdateTime > updateInterval) {
-    await predict();
+    detectEmotion();
     lastUpdateTime = now;
   }
-  setTimeout(() => {
-    window.requestAnimationFrame(loop);
-  }, 200);
+  window.requestAnimationFrame(loop);
 }
 
-async function predict() {
-  const prediction = await model.predict(webcam.canvas);
-  const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
-  let className = best.className;
-
-  className = getCorrectedClass(className);
-  displayEmotion(className);
-}
-
-function getCorrectedClass(tmClass) {
-  if (!latestFaceLandmarks) return tmClass;
+function detectEmotion() {
+  if (!latestFaceLandmarks) return;
 
   const left = latestFaceLandmarks[61];
   const right = latestFaceLandmarks[291];
@@ -89,16 +72,12 @@ function getCorrectedClass(tmClass) {
   const mouthHeight = bottomLip.y - topLip.y;
   const mouthSlope = ((left.y + right.y) / 2 - topLip.y);
 
-  if (tmClass !== "happy" && mouthSlope < 0.02) return "happy";
-  if (tmClass !== "angry" && mouthSlope > 0.05) return "angry";
-  if (tmClass !== "tired" && mouthHeight > 0.07) return "tired";
-  if (
-    mouthSlope >= 0.02 && mouthSlope <= 0.05 &&
-    mouthHeight <= 0.05 &&
-    tmClass !== "neutral"
-  ) return "neutral";
+  let className = "neutral";
+  if (mouthSlope < 0.005) className = "happy";
+  else if (mouthSlope > 0.06) className = "angry";
+  else if (mouthHeight > 0.09) className = "tired";
 
-  return tmClass;
+  displayEmotion(className);
 }
 
 function displayEmotion(className) {
@@ -153,14 +132,7 @@ function startFaceMesh() {
     }
   });
 
-  const camera = new Camera(webcam.webcam, {
-    onFrame: async () => {
-      await faceMesh.send({ image: webcam.webcam });
-    },
-    width: 400,
-    height: 400
-  });
-  camera.start();
+  window.faceMesh = faceMesh;
 }
 
 function toggleSpeech() {
