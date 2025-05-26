@@ -75,16 +75,18 @@ function detectEmotion() {
   const mouthOpen = averageY([14]) - averageY([13]);
   const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
   const browLift = averageY([33, 133]) - averageY([65, 66]);
-  const mouthWidth = Math.abs(latestFaceLandmarks[61].x - latestFaceLandmarks[291].x);
+  const mouthCurve = averageY([61, 291]) - averageY([13]);
 
   let className = "neutral";
 
-  if ((browLift > 0.007 && eyeOpen > 0.005) || mouthWidth > 0.055) {
+  if (mouthCurve > 0.015 && browLift > 0.006) {
     className = "happy";
-  } else if (mouthOpen > 0.023) {
+  } else if (mouthOpen > 0.030) {
     className = "tired";
-  } else if (mouthOpen < 0.012 && browLift < 0.010 && mouthWidth < 0.045) {
+  } else if (mouthOpen < 0.012 && browLift < 0.008) {
     className = "angry";
+  } else {
+    className = "neutral";
   }
 
   const now = Date.now();
