@@ -7,14 +7,6 @@ let lastTriggerTime = 0;
 const cooldown = 3000;
 
 let lastSpokenText = "";
-let currentAudio = null;
-
-const audioIndexMap = {
-  happy: 0,
-  angry: 0,
-  tired: 0,
-  neutral: 0
-};
 
 const suggestionPool = {
   happy: [
@@ -83,12 +75,14 @@ function detectEmotion() {
   const mouthOpen = averageY([14]) - averageY([13]);
   const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
   const browLift = averageY([33, 133]) - averageY([65, 66]);
+  const mouthCurve = averageY([61, 291]) - averageY([13]);
 
   let className = "neutral";
 
-  if (browLift > 0.008 && eyeOpen > 0.006) {
+  // 更靈敏判斷 happy，加入嘴角弧度 mouthCurve
+  if (mouthCurve > 0.015 && browLift > 0.006 && eyeOpen > 0.006) {
     className = "happy";
-  } else if (mouthOpen > 0.025) {
+  } else if (mouthOpen > 0.022) {
     className = "tired";
   } else if (mouthOpen < 0.012 && browLift < 0.010) {
     className = "angry";
@@ -137,21 +131,11 @@ function displayEmotion(className) {
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
   if (resultText !== lastSpokenText) {
-    if (currentAudio && !currentAudio.paused) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-    }
-
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
-      const index = audioIndexMap[className];
-      currentAudio = audios[index];
-      currentAudio.currentTime = 0;
-      currentAudio.play();
-
-      audioIndexMap[className] = (index + 1) % audios.length;
+      const audio = new Audio(audios[Math.floor(Math.random() * audios.length)].src);
+      audio.play();
     }
-
     lastSpokenText = resultText;
   }
 
