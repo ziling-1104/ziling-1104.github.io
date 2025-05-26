@@ -4,13 +4,12 @@ const metadataURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/me
 let model, webcam, maxPredictions;
 let latestFaceLandmarks = null;
 let videoElement;
+let currentAudio = null;
 
 let lastEmotion = "";
 let lastTriggerTime = 0;
 const cooldown = 5000;
-
 let lastSpokenText = "";
-let currentAudio = null;
 
 const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
 
@@ -38,10 +37,10 @@ const suggestionPool = {
 };
 
 const audioMap = {
-  happy: [new Audio("happy_1.mp3"), new Audio("happy_2.mp3"), new Audio("happy_3.mp3")],
-  angry: [new Audio("angry_1.mp3"), new Audio("angry_2.mp3"), new Audio("angry_3.mp3")],
-  tired: [new Audio("tired_1.mp3"), new Audio("tired_2.mp3"), new Audio("tired_3.mp3")],
-  neutral: [new Audio("neutral_1.mp3"), new Audio("neutral_2.mp3"), new Audio("neutral_3.mp3")]
+  happy: ["happy_1.mp3", "happy_2.mp3", "happy_3.mp3"],
+  angry: ["angry_1.mp3", "angry_2.mp3", "angry_3.mp3"],
+  tired: ["tired_1.mp3", "tired_2.mp3", "tired_3.mp3"],
+  neutral: ["neutral_1.mp3", "neutral_2.mp3", "neutral_3.mp3"]
 };
 
 async function init() {
@@ -65,7 +64,6 @@ async function init() {
     }
   });
 
-  // 防止重複建立鏡頭
   if (!videoElement) {
     videoElement = document.createElement("video");
     webcam = new Camera(videoElement, {
@@ -80,9 +78,7 @@ async function init() {
     document.getElementById("webcam-container").appendChild(videoElement);
   }
 
-  setInterval(() => {
-    detectEmotion();
-  }, 1000);
+  setInterval(detectEmotion, 1000);
 }
 
 async function detectEmotion() {
@@ -94,7 +90,6 @@ async function detectEmotion() {
 
   let className = "neutral";
 
-  // 使用 TM 判斷 angry
   const prediction = await model.predict(webcam.canvas);
   const angryProb = prediction.find(p => p.className === "angry")?.probability || 0;
   if (angryProb > 0.7) {
@@ -141,9 +136,9 @@ function displayEmotion(className) {
   const suggestion = document.getElementById("suggestion");
   const history = document.getElementById("history");
 
-  const resultEmoji = emojiMap[className] || "❓";
-  const textPool = suggestionPool[className] || ["觀察中..."];
-  const resultText = textPool[Math.floor(Math.random() * textPool.length)];
+  const resultEmoji = emojiMap[className];
+  const suggestions = suggestionPool[className];
+  const resultText = suggestions[Math.floor(Math.random() * suggestions.length)];
 
   emoji.innerHTML = resultEmoji;
   suggestion.innerHTML = resultText;
@@ -155,12 +150,10 @@ function displayEmotion(className) {
       currentAudio.currentTime = 0;
     }
 
-    const audios = audioMap[className];
-    if (audios && audios.length > 0) {
-      currentAudio = audios[Math.floor(Math.random() * audios.length)];
-      currentAudio.play().catch(e => console.warn("播放失敗", e));
-    }
-
+    const files = audioMap[className];
+    const file = files[Math.floor(Math.random() * files.length)];
+    currentAudio = new Audio(file);
+    currentAudio.play().catch(() => {});
     lastSpokenText = resultText;
   }
 
@@ -193,8 +186,8 @@ function updateChart() {
   });
 }
 
-// 防止 Chrome 禁止播放 mp3
+// 解鎖音訊播放權限
 window.addEventListener("click", () => {
-  const dummy = new Audio();
-  dummy.play().catch(() => {});
+  const unlock = new Audio();
+  unlock.play().catch(() => {});
 }, { once: true });
