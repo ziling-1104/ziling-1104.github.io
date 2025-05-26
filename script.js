@@ -7,7 +7,6 @@ let lastTriggerTime = 0;
 const cooldown = 3000;
 
 let lastSpokenText = "";
-let currentAudio = null;
 
 const suggestionPool = {
   happy: [
@@ -85,11 +84,7 @@ function detectEmotion() {
     className = "tired";
   } else if (mouthOpen < 0.012 && browLift < 0.010) {
     className = "angry";
-  } else if (
-    Math.abs(mouthOpen) < 0.015 &&
-    Math.abs(browLift) < 0.008 &&
-    Math.abs(eyeOpen) < 0.006
-  ) {
+  } else {
     className = "neutral";
   }
 
@@ -133,20 +128,13 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
-  // 修正聲音重疊問題
+  // 最穩定的聲音播放方式：直接建立播放
   if (resultText !== lastSpokenText) {
-    if (currentAudio && !currentAudio.paused) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-    }
-
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
-      currentAudio = audios[Math.floor(Math.random() * audios.length)];
-      currentAudio.currentTime = 0;
-      currentAudio.play();
+      const audio = new Audio(audios[Math.floor(Math.random() * audios.length)].src);
+      audio.play();
     }
-
     lastSpokenText = resultText;
   }
 
