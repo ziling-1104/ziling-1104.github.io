@@ -140,9 +140,9 @@ function displayEmotion(className) {
   const suggestions = suggestionPool[className];
   const resultText = suggestions[Math.floor(Math.random() * suggestions.length)];
 
-  emoji.innerHTML = resultEmoji;
-  suggestion.innerHTML = resultText;
-  document.body.style.backgroundColor = bgColorMap[className];
+  if (emoji) emoji.innerHTML = resultEmoji;
+  if (suggestion) suggestion.innerHTML = resultText;
+  document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
   if (resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) {
@@ -161,7 +161,7 @@ function displayEmotion(className) {
   const record = document.createElement("div");
   record.textContent = `[${timestamp}] ${resultEmoji} ${resultText}`;
   record.style.color = getColorByClass(className);
-  history.prepend(record);
+  if (history) history.prepend(record);
 
   emotionLog[className]++;
   updateChart();
@@ -186,7 +186,7 @@ function updateChart() {
   });
 }
 
-// 解鎖音訊播放權限
+// 為了解鎖播放權限，點擊任意地方一次即可
 window.addEventListener("click", () => {
   const unlock = new Audio();
   unlock.play().catch(() => {});
