@@ -9,6 +9,13 @@ const cooldown = 3000;
 let lastSpokenText = "";
 let currentAudio = null;
 
+const audioIndexMap = {
+  happy: 0,
+  angry: 0,
+  tired: 0,
+  neutral: 0
+};
+
 const suggestionPool = {
   happy: [
     "她心情不錯！你可以說：『看到你我也整天都快樂！』",
@@ -85,11 +92,7 @@ function detectEmotion() {
     className = "tired";
   } else if (mouthOpen < 0.012 && browLift < 0.010) {
     className = "angry";
-  } else if (
-    Math.abs(mouthOpen) < 0.015 &&
-    Math.abs(browLift) < 0.008 &&
-    Math.abs(eyeOpen) < 0.006
-  ) {
+  } else {
     className = "neutral";
   }
 
@@ -133,7 +136,6 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
-  // 播放對應情緒的 mp3（先停止上一個）
   if (resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) {
       currentAudio.pause();
@@ -142,9 +144,12 @@ function displayEmotion(className) {
 
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
-      currentAudio = audios[Math.floor(Math.random() * audios.length)];
+      const index = audioIndexMap[className];
+      currentAudio = audios[index];
       currentAudio.currentTime = 0;
       currentAudio.play();
+
+      audioIndexMap[className] = (index + 1) % audios.length;
     }
 
     lastSpokenText = resultText;
