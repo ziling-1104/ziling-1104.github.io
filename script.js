@@ -7,6 +7,7 @@ let lastTriggerTime = 0;
 const cooldown = 3000;
 
 let lastSpokenText = "";
+let currentAudio = null;
 
 const suggestionPool = {
   happy: [
@@ -78,18 +79,14 @@ function detectEmotion() {
 
   let className = "neutral";
 
-  // 新邏輯：優先 happy > tired > angry > neutral
-  if (browLift > 0.008 && eyeOpen > 0.006) {
+  // 靈敏度調整版（更容易辨識 happy 與 tired）
+  if (browLift > 0.007 && eyeOpen > 0.0055) {
     className = "happy";
-  } else if (mouthOpen > 0.025) {
+  } else if (mouthOpen > 0.020) {
     className = "tired";
-  } else if (mouthOpen < 0.012 && browLift < 0.010) {
+  } else if (mouthOpen < 0.013 && browLift < 0.009) {
     className = "angry";
-  } else if (
-    Math.abs(mouthOpen) < 0.015 &&
-    Math.abs(browLift) < 0.008 &&
-    Math.abs(eyeOpen) < 0.006
-  ) {
+  } else {
     className = "neutral";
   }
 
@@ -133,12 +130,19 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
+  // 播放 mp3（防止重疊）
   if (resultText !== lastSpokenText) {
+    if (currentAudio && !currentAudio.paused) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
-      const audio = new Audio(audios[Math.floor(Math.random() * audios.length)].src);
-      audio.play();
+      currentAudio = audios[Math.floor(Math.random() * audios.length)];
+      currentAudio.play();
     }
+
     lastSpokenText = resultText;
   }
 
