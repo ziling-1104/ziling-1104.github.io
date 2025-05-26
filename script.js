@@ -78,13 +78,18 @@ function detectEmotion() {
 
   let className = "neutral";
 
+  // 新邏輯：優先 happy > tired > angry > neutral
   if (browLift > 0.008 && eyeOpen > 0.006) {
     className = "happy";
   } else if (mouthOpen > 0.025) {
     className = "tired";
   } else if (mouthOpen < 0.012 && browLift < 0.010) {
     className = "angry";
-  } else {
+  } else if (
+    Math.abs(mouthOpen) < 0.015 &&
+    Math.abs(browLift) < 0.008 &&
+    Math.abs(eyeOpen) < 0.006
+  ) {
     className = "neutral";
   }
 
@@ -128,7 +133,6 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
-  // 最穩定的聲音播放方式：直接建立播放
   if (resultText !== lastSpokenText) {
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
