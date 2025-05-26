@@ -51,9 +51,6 @@ main {
   border: 4px solid #5734d5;
 }
 
-#projects {
-  background: #ffffff;
-}
 .project-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -68,6 +65,29 @@ main {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+/* 新增：作品集圖片展示樣式 */
+#projects {
+  background: #ffffff;
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.screenshot-gallery {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.screenshot-gallery img {
+  width: 300px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  object-fit: cover;
+}
+
+/* MoodMate+ 區塊 */
 #moodmate {
   background: transparent;
   text-align: center;
@@ -101,7 +121,6 @@ main {
   min-width: 290px;
   max-width: 600px;
 }
-
 #emoji {
   font-size: 3em;
   margin-bottom: 0.5rem;
@@ -168,6 +187,7 @@ button:hover {
   white-space: nowrap;
   overflow: hidden;
 }
+
 @media (max-width: 768px) {
   nav {
     flex-direction: column;
@@ -176,5 +196,8 @@ button:hover {
   #result {
     width: 97%;
     min-width: unset;
+  }
+  .screenshot-gallery img {
+    width: 90%;
   }
 }
