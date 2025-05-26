@@ -7,6 +7,7 @@ let lastTriggerTime = 0;
 const cooldown = 3000;
 
 let lastSpokenText = "";
+let currentAudio = null;
 
 const suggestionPool = {
   happy: [
@@ -75,18 +76,20 @@ function detectEmotion() {
   const mouthOpen = averageY([14]) - averageY([13]);
   const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
   const browLift = averageY([33, 133]) - averageY([65, 66]);
-  const mouthCurve = averageY([61, 291]) - averageY([13]);
 
   let className = "neutral";
 
-  // 更靈敏判斷 happy，加入嘴角弧度 mouthCurve
-  if (mouthCurve > 0.015 && browLift > 0.006 && eyeOpen > 0.006) {
+  if (browLift > 0.008 && eyeOpen > 0.006) {
     className = "happy";
-  } else if (mouthOpen > 0.022) {
+  } else if (mouthOpen > 0.025) {
     className = "tired";
   } else if (mouthOpen < 0.012 && browLift < 0.010) {
     className = "angry";
-  } else {
+  } else if (
+    Math.abs(mouthOpen) < 0.015 &&
+    Math.abs(browLift) < 0.008 &&
+    Math.abs(eyeOpen) < 0.006
+  ) {
     className = "neutral";
   }
 
@@ -130,12 +133,20 @@ function displayEmotion(className) {
   suggestion.innerHTML = resultText;
   document.body.style.backgroundColor = bgColorMap[className] || "#fff";
 
+  // 修正聲音重疊問題
   if (resultText !== lastSpokenText) {
+    if (currentAudio && !currentAudio.paused) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+
     const audios = audioMap[className];
     if (audios && audios.length > 0) {
-      const audio = new Audio(audios[Math.floor(Math.random() * audios.length)].src);
-      audio.play();
+      currentAudio = audios[Math.floor(Math.random() * audios.length)];
+      currentAudio.currentTime = 0;
+      currentAudio.play();
     }
+
     lastSpokenText = resultText;
   }
 
