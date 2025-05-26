@@ -1,13 +1,17 @@
-let webcam;
+const modelURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/model.json";
+const metadataURL = "https://teachablemachine.withgoogle.com/models/MbSMHGKtH/metadata.json";
+
+let model, webcam, maxPredictions;
 let latestFaceLandmarks = null;
-const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
 
 let lastEmotion = "";
 let lastTriggerTime = 0;
-const cooldown = 3000;
+const cooldown = 5000;
 
 let lastSpokenText = "";
 let currentAudio = null;
+
+const emotionLog = { happy: 0, angry: 0, tired: 0, neutral: 0 };
 
 const suggestionPool = {
   happy: [
@@ -40,6 +44,11 @@ const audioMap = {
 };
 
 async function init() {
+  // Teachable Machine 模型載入
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
+
+  // Mediapipe FaceMesh 模型
   const faceMesh = new FaceMesh({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
   });
@@ -60,7 +69,6 @@ async function init() {
   webcam = new Camera(document.createElement("video"), {
     onFrame: async () => {
       await faceMesh.send({ image: webcam.video });
-      detectEmotion();
     },
     width: 400,
     height: 400
@@ -68,26 +76,35 @@ async function init() {
 
   await webcam.start();
   document.getElementById("webcam-container").appendChild(webcam.video);
+
+  // 每秒偵測一次
+  setInterval(detectEmotion, 1000);
 }
 
-function detectEmotion() {
+async function detectEmotion() {
   if (!latestFaceLandmarks) return;
 
+  // Mediapipe 偵測數據
   const mouthOpen = averageY([14]) - averageY([13]);
   const eyeOpen = averageY([145, 153]) - averageY([159, 160]);
   const browLift = averageY([33, 133]) - averageY([65, 66]);
 
   let className = "neutral";
 
-  // 靈敏度調整版（更容易辨識 happy 與 tired）
-  if (browLift > 0.007 && eyeOpen > 0.0055) {
-    className = "happy";
-  } else if (mouthOpen > 0.020) {
-    className = "tired";
-  } else if (mouthOpen < 0.013 && browLift < 0.009) {
+  // 先用 Teachable Machine 判斷「生氣」
+  const prediction = await model.predict(webcam.canvas);
+  const angryProb = prediction.find(p => p.className === "angry")?.probability || 0;
+  if (angryProb > 0.7) {
     className = "angry";
   } else {
-    className = "neutral";
+    // 其他情緒用邏輯判斷
+    if (browLift > 0.007 && eyeOpen > 0.0055) {
+      className = "happy";
+    } else if (mouthOpen > 0.020) {
+      className = "tired";
+    } else {
+      className = "neutral";
+    }
   }
 
   const now = Date.now();
@@ -95,7 +112,6 @@ function detectEmotion() {
 
   lastEmotion = className;
   lastTriggerTime = now;
-
   displayEmotion(className);
 }
 
@@ -128,9 +144,8 @@ function displayEmotion(className) {
 
   emoji.innerHTML = resultEmoji;
   suggestion.innerHTML = resultText;
-  document.body.style.backgroundColor = bgColorMap[className] || "#fff";
+  document.body.style.backgroundColor = bgColorMap[className];
 
-  // 播放 mp3（防止重疊）
   if (resultText !== lastSpokenText) {
     if (currentAudio && !currentAudio.paused) {
       currentAudio.pause();
