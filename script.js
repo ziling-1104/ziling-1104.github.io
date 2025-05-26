@@ -36,6 +36,7 @@ const suggestionPool = {
   ]
 };
 
+// 若你有把音檔放在 audio 資料夾，把每個檔名前加上 "audio/"
 const audioMap = {
   happy: ["happy_1.mp3", "happy_2.mp3", "happy_3.mp3"],
   angry: ["angry_1.mp3", "angry_2.mp3", "angry_3.mp3"],
@@ -153,7 +154,10 @@ function displayEmotion(className) {
     const files = audioMap[className];
     const file = files[Math.floor(Math.random() * files.length)];
     currentAudio = new Audio(file);
-    currentAudio.play().catch(() => {});
+    currentAudio.play().catch((e) => {
+      console.warn("音檔播放失敗，檢查檔案是否存在：", file, e);
+    });
+
     lastSpokenText = resultText;
   }
 
@@ -186,7 +190,7 @@ function updateChart() {
   });
 }
 
-// 為了解鎖播放權限，點擊任意地方一次即可
+// 點一下畫面，解鎖音訊播放權限
 window.addEventListener("click", () => {
   const unlock = new Audio();
   unlock.play().catch(() => {});
